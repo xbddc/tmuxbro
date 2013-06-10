@@ -5,15 +5,16 @@ tagged_window=""
 
 func_menu () {
   clear
-  echo "=============================="
+  echo "==[ tmuxbro v0.1 ]=============="
   echo "[1;32m[F2][m: go previous window"
   echo "[1;32m[F3][m: go next window"
   echo "[1;32m[F4][m: remove current window"
   echo "[1;32m[F5][m: tag/untag current window"
   echo "[1;32m[F6][m: tag/untag all windows"
   echo "[1;32m[F7][m: toggle multicast"
+  echo "[1;32m[F8][m: add host"
   echo "[1;32m[F12][m: quit program"
-  echo "=============================="
+  echo "================================"
 
   curr=`tmux list-windows -t ssh-$$ | grep \(active\) | cut -d: -f1`
   list=`tmux list-windows -t ssh-$$ | grep -Eo '.+\[[0-9x]+\]'`
@@ -75,7 +76,7 @@ kill_session () {
       tmux kill-session -t ssh-$$
     fi
   done
-  echo "done."
+  echo "bye."
 }
 
 create_window () {
@@ -101,6 +102,14 @@ next_window () {
 del_window () {
   check_session
   tmux kill-window -t ssh-$$
+}
+
+add_window () {
+  check_session
+  read -p "Host: " host
+  if [ "$host" != "" ]; then
+    create_window "ssh $host"
+  fi
 }
 
 multicast () {
@@ -159,6 +168,9 @@ if [ -z $1 ]; then
 elif [ ! -f $1 ]; then
   echo "$0: file not found"
   exit 2
+elif [ ! -f `which tmux` ]; then
+  echo "$0: tmux not found"
+  exit 4
 fi
 
 attach_session
@@ -169,6 +181,7 @@ for host in $list; do
 done
 remove_window_0
 func_menu
+echo "notice: please focus on this terminal to type commands"
 
 if [ -x "`which x-terminal-emulator`" ]; then
   x-terminal-emulator -e tmux attach-session -t ssh-$$ 2>/dev/null &
@@ -177,7 +190,7 @@ elif [ -x "`which gnome-terminal`" ]; then
 elif [ -x "`which xterm`" ]; then
   xterm -e "tmux attach-session -t ssh-$$" 2>/dev/null &
 else
-  echo "please open a new terminal window and run 'tmux attach-session -t ssh-$$'"
+  echo "please open a new terminal and run 'tmux attach-session -t ssh-$$' to get hosts output"
 fi
 
 while [ 1 ]; do
@@ -200,6 +213,9 @@ while [ 1 ]; do
     ;;
     \[18~) #F7
       toggle_multicast
+    ;;
+    \[19~) #F8
+      add_window
     ;;
     \[24~) #F12
       break
