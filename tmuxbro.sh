@@ -50,6 +50,18 @@ check_session () {
     echo "session not found, quit."
     exit 3
   fi
+
+  list=`tmux list-window -t ssh-$$ | cut -d: -f1`
+  new_tagged_window=""
+  for x in $tagged_window; do
+    for y in $list; do
+      if [ "$x" = "$y" ]; then
+        new_tagged_window="$x $new_tagged_window"
+        break
+      fi
+    done
+  done
+  tagged_window=$new_tagged_window
 }
 
 attach_session () {
@@ -67,16 +79,23 @@ attach_session () {
 }
 
 kill_session () {
-  echo -n "killing session ... "
-  while [ 1 ]; do
-    tmux has-session -t ssh-$$ 2>/dev/null
-    if [ $? != 0 ]; then
-      break
-    else
-      tmux kill-session -t ssh-$$
-    fi
-  done
+  echo -n "\ndisconnect from each host? (y/n/c) "
+  n=`get_keystroke`
+  if [ "$n" != "n" ] && [ "$n" != "y" ]; then
+    return
+  elif [ "$n" = "y" ]; then
+    echo -n "killing session ... "
+    while [ 1 ]; do
+      tmux has-session -t ssh-$$ 2>/dev/null
+      if [ $? != 0 ]; then
+        break
+      else
+        tmux kill-session -t ssh-$$
+      fi
+    done
+  fi
   echo "bye."
+  exit 0
 }
 
 create_window () {
@@ -101,7 +120,11 @@ next_window () {
 
 del_window () {
   check_session
-  tmux kill-window -t ssh-$$
+  echo -n "\nremove this window? (y/n) "
+  n=`get_keystroke`
+  if [ "$n" = "y" ]; then
+    tmux kill-window -t ssh-$$
+  fi
 }
 
 add_window () {
@@ -218,7 +241,7 @@ while [ 1 ]; do
       add_window
     ;;
     \[24~) #F12
-      break
+      kill_session
     ;;
     *)
       multicast "$m"
@@ -227,5 +250,3 @@ while [ 1 ]; do
   esac
   func_menu
 done
-
-kill_session
