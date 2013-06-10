@@ -71,8 +71,9 @@ attach_session () {
     if [ $? = 0 ]; then
       break
     else
-      tmux new-session -s ssh-$$ \; detach
+      tmux new-session -d -s ssh-$$
       sleep 1
+      tmux set-option -t ssh-$$ remain-on-exit on 1>/dev/null
     fi
   done
   echo "done."
@@ -129,10 +130,15 @@ del_window () {
 
 add_window () {
   check_session
-  read -p "Host: " host
-  if [ "$host" != "" ]; then
-    create_window "ssh $host"
-  fi
+  while [ 1 ]; do
+    read -p "add a host: " host
+    if [ "$host" != "" ]; then
+      create_window "ssh $host"
+      break
+    elif [ "$1" != "force" ]; then
+      break
+    fi
+  done
 }
 
 multicast () {
@@ -185,26 +191,30 @@ toggle_multicast () {
   fi
 }
 
-if [ -z $1 ]; then 
-  echo "usage: $0 /path/to/host_list"
-  exit 1
-elif [ ! -f $1 ]; then
-  echo "$0: file not found"
-  exit 2
-elif [ ! -f `which tmux` ]; then
+if [ "$1" = "-h" ]; then
+  echo "usage: $0 [/path/to/host_list]"
+  exit 0
+fi
+
+if [ ! -f `which tmux` ]; then
   echo "$0: tmux not found"
-  exit 4
+  exit 1
 fi
 
 attach_session
 
-list=`cat $1`
-for host in $list; do 
-  create_window "ssh $host"
-done
+if [ ! -z $1 ] && [ -f $1 ]; then
+  list=`cat $1`
+  for host in $list; do 
+    create_window "ssh $host"
+  done
+else
+  add_window force
+fi
+
 remove_window_0
 func_menu
-echo "notice: please focus on this terminal to type commands"
+echo "focus on this terminal to pass cmds"
 
 if [ -x "`which x-terminal-emulator`" ]; then
   x-terminal-emulator -e tmux attach-session -t ssh-$$ 2>/dev/null &
