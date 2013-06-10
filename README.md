@@ -13,4 +13,4 @@ root@10.210.201.83
 $ ./tmuxbro.sh /path/to/host_list
 </pre>
 
-screenshot: ![screenshot](http://img.ncu.cc/1370858622.16.png)
+screenshot: ![screenshot](http://img.ncu.cc/1370863551.60.png)
