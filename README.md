@@ -17,4 +17,9 @@ $ ./tmuxbro.sh /path/to/host_list
 </pre>
 
 Screenshot:
+
+v0.2
+![screenshot](http://img.ncu.cc/1371049938.39.png)
+
+v0.1
 ![screenshot](http://img.ncu.cc/1370863551.60.png)
