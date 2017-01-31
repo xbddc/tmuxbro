@@ -2,15 +2,17 @@ tmuxbro
 =======
 
 `tmuxbro` is a ssh multiplexer written in shell script, 
-it uses `tmux` as its terminal emulator backend. 
-`tmuxbro` implements most functions in `omnitty`, 
-which is a curses-based ssh multiplexer program on UNIX-like systems.
+using `tmux` as the terminal emulator backend.
+
+`tmuxbro` can be a simple alternative utility to `omnitty`,
+which is a curses-based ssh multiplexer tool on UNIX-like systems.
 
 <pre>
 $ cat /path/to/host_list
-root@10.210.201.81
-root@10.210.201.82
-root@10.210.201.83
+root@172.17.0.3
+root@172.17.0.4
+root@172.17.0.5
+root@172.17.0.6
 ...
 
 $ ./tmuxbro.sh /path/to/host_list
@@ -18,8 +20,4 @@ $ ./tmuxbro.sh /path/to/host_list
 
 Screenshot:
 
-v0.2
-![screenshot](http://img.ncu.cc/1371049938.39.png)
-
-v0.1
-![screenshot](http://img.ncu.cc/1370863551.60.png)
+![screenshot](https://raw.githubusercontent.com/xbddc/tmuxbro/master/screenshot.jpg)
