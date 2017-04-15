@@ -31,7 +31,7 @@ func_menu () {
   fi
 
   get_pane_list
-  list=`tmux list-panes -a -t ssh-$sid -F "#{pane_id}  #{pane_start_command} " | grep -v '^%0 ' | sort`
+  list=`tmux list-panes -a -t ssh-$sid -F "#D #{pane_start_command}" | grep -v '^%0 ' | sort -k2 -t% -n`
   list=`echo "$list" | sed "s:^$curr_pane \(.*\)$:$curr_pane [1;42m\\1[m:g"`
   if [ $do_multicast = 0 ]; then
     for x in $tagged_pane; do
@@ -53,10 +53,10 @@ func_menu () {
 }
 
 get_pane_list () {
-  pane_list=`tmux list-panes -a -t ssh-$sid -F "#{pane_id}" | grep -v '^%0$' | sort`
+  pane_list=`tmux list-panes -a -t ssh-$sid -F "#D" | grep -v '^%0$' | sort -k2 -t% -n`
   OLD_IFS=$IFS; IFS=\n
-  prev_pane=`echo $pane_list | grep -B1 "$curr_pane" | head -n1`
-  next_pane=`echo $pane_list | grep -A1 "$curr_pane" | tail -n1`
+  prev_pane=`echo $pane_list | grep -B1 "^$curr_pane$" | head -n1`
+  next_pane=`echo $pane_list | grep -A1 "^$curr_pane$" | tail -n1`
   IFS=$OLD_IFS
 }
 
@@ -93,7 +93,7 @@ kill_session () {
 
 join_pane () {
   tmux join-pane -s $1 -t %0 -h -d
-  adj_width=$(( `tmux list-pane -a -F "#{pane_width} #{pane_id}" | grep %0 | cut -d\  -f1`-32 ))
+  adj_width=$(( `tmux list-pane -a -F "#{pane_width} #D" | grep %0 | cut -d\  -f1`-32 ))
   tmux resize-pane -t $curr_pane -L $adj_width
 }
 
@@ -103,7 +103,7 @@ create_window () {
 
 prev_window () {
   if [ "$curr_pane" != "$prev_pane" ]; then
-    tmux break-pane -t $curr_pane -d
+    tmux break-pane -s $curr_pane -d
     curr_pane=$prev_pane
     join_pane $curr_pane
   fi
@@ -111,7 +111,7 @@ prev_window () {
 
 next_window () {
   if [ "$curr_pane" != "$next_pane" ]; then
-    tmux break-pane -t $curr_pane -d
+    tmux break-pane -s $curr_pane -d
     curr_pane=$next_pane
     join_pane $curr_pane
   fi
