@@ -3,7 +3,8 @@
 show_menu=1
 do_multicast=0
 tagged_pane=""
-curr_pane="%1"
+root_pane=""
+curr_pane=""
 next_pane=""
 prev_pane=""
 pane_list=""
@@ -31,7 +32,7 @@ func_menu () {
   fi
 
   get_pane_list
-  list=`tmux list-panes -a -t ssh-$sid -F "#D #{pane_start_command}" | grep -v '^%0 ' | sort -k2 -t% -n`
+  list=`tmux list-panes -s -F "#D #{pane_start_command}" | tail -n +2 | sort -k2 -t% -n`
   list=`echo "$list" | sed "s:^$curr_pane \(.*\)$:$curr_pane [1;42m\\1[m:g"`
   if [ $do_multicast = 0 ]; then
     for x in $tagged_pane; do
@@ -48,12 +49,12 @@ func_menu () {
   IFS=$OLD_IFS
 
   if [ $do_multicast = 1 ]; then
-    echo -n "\n[1;41m!!! MULTICAST MODE !!![m"
+    echo "\n[1;41m!!! MULTICAST MODE !!![m"
   fi
 }
 
 get_pane_list () {
-  pane_list=`tmux list-panes -a -t ssh-$sid -F "#D" | grep -v '^%0$' | sort -k2 -t% -n`
+  pane_list=`tmux list-panes -s -F "#D" | tail -n +2 | sort -k2 -t% -n`
   OLD_IFS=$IFS; IFS=\n
   prev_pane=`echo $pane_list | grep -B1 "^$curr_pane$" | head -n1`
   next_pane=`echo $pane_list | grep -A1 "^$curr_pane$" | tail -n1`
@@ -69,12 +70,11 @@ get_keystroke () {
 
 kill_session () {
   echo "\nclose all remote connections?"
-  echo -n "([y]es/[n]o/[c]ancel) "
+  echo "([y]es/[n]o/[c]ancel) "
   n=`get_keystroke`
-  if [ "$n" != "n" ] && [ "$n" != "y" ]; then
-    return
-  elif [ "$n" = "y" ]; then
-    echo -n "killing session ... "
+
+  if [ "$n" = "y" ]; then
+    echo "killing session ... "
     while [ 1 ]; do
       tmux has-session -t ssh-$sid 2>/dev/null
       if [ $? != 0 ]; then
@@ -83,18 +83,16 @@ kill_session () {
         tmux kill-session -t ssh-$sid
       fi
     done
-  else
+    exit 0
+  elif [ "$n" = "n" ]; then
     tmux detach
   fi
-
-  echo "bye."
-  exit 0
 }
 
 join_pane () {
-  tmux join-pane -s $1 -t %0 -h -d
-  adj_width=$(( `tmux list-pane -a -F "#{pane_width} #D" | grep %0 | cut -d\  -f1`-32 ))
-  tmux resize-pane -t $curr_pane -L $adj_width
+  tmux join-pane -s $1 -t $root_pane -h -d
+  adj_width=$(( `tmux list-panes -s -F "#{pane_width} #D" | grep $root_pane | cut -d\  -f1`-32 ))
+  tmux resize-pane -t $1 -L $adj_width
 }
 
 create_window () {
@@ -118,7 +116,7 @@ next_window () {
 }
 
 del_window () {
-  echo -n "\nremove this window? (y/n) "
+  echo "\nremove this window? (y/n) "
   n=`get_keystroke`
   if [ "$n" = "y" ]; then
     tmux kill-pane -t $curr_pane
@@ -210,7 +208,7 @@ sid=$2
 host_file=$3
 
 if [ ! -z $host_file ] && [ -f $host_file ]; then
-  for host in `cat $host_file`; do 
+  for host in `cat $host_file`; do
     create_window "ssh $host"
   done
 else
@@ -218,6 +216,8 @@ else
 fi
 
 tmux select-window -t 0
+root_pane=`tmux list-panes -s -F "#D" | head -n1`
+curr_pane=`tmux list-panes -s -F "#D" | tail -n +2 | head -n1`
 join_pane $curr_pane
 func_menu
 
